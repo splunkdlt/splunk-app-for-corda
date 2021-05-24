@@ -1,0 +1,31 @@
+splunk:
+  conf:
+    props:
+      directory: /opt/splunk/etc/system/local
+      content:
+        node:
+          INDEXED_EXTRACTIONS: JSON
+          TIME_PREFIX: "\"epochSecond\":"
+          TIME_FORMAT: "%s"
+          TZ: UTC
+    indexes:
+      directory: /opt/splunk/etc/system/local
+      content:
+        corda:
+          datatype: event
+          homePath: $SPLUNK_DB/corda/db
+          coldPath: $SPLUNK_DB/corda/colddb
+          thawedPath: $SPLUNK_DB/corda/thaweddb
+          maxTotalDataSizeMB: 512000
+        metrics:
+          datatype: metric
+          homePath: $SPLUNK_DB/metrics/db
+          coldPath: $SPLUNK_DB/metrics/colddb
+          thawedPath: $SPLUNK_DB/metrics/thaweddb
+          maxTotalDataSizeMB: 512000
+        traces:
+          datatype: event
+          homePath: $SPLUNK_DB/traces/db
+          coldPath: $SPLUNK_DB/traces/colddb
+          thawedPath: $SPLUNK_DB/traces/thaweddb
+          thaweddb: 512000

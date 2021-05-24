@@ -1,0 +1,202 @@
+version: "3.6"
+x-splunk-def:
+  &splunk-def
+  image: splunk/splunk:8.0.4-debian
+  environment:
+    - SPLUNK_START_ARGS=--accept-license
+    - SPLUNK_HEC_TOKEN=11111111-1111-1111-1111-1111111111113
+    - SPLUNK_PASSWORD=changeme
+    - SPLUNK_APPS_URL=https://splunk-corda.s3.us-east-2.amazonaws.com/splunk-app-for-infrastructure_203.tgz,https://splunk-corda.s3.us-east-2.amazonaws.com/splunk-add-on-for-infrastructure_203.tgz,/tmp/splunk_app_for_corda.tgz
+  expose:
+    - "8000"
+    - "8088"
+    - "9997"
+  healthcheck:
+    test: ['CMD', 'curl', '-f', 'http://localhost:8000']
+    interval: 5s
+    timeout: 5s
+    retries: 20
+
+services:
+  splunk:
+    << : *splunk-def
+    container_name: splunk
+    hostname: splunk
+    ports:
+      - "8000:8000"
+      - "8088:8088"
+      - "9997:9997"
+      - "8125:8125"
+    volumes:
+      - splunk-var:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+      - ./splunk/splunk-config.yml:/tmp/defaults/default.yml
+      - ./splunk/splunk_app_for_corda.tgz:/tmp/splunk_app_for_corda.tgz
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.100
+
+  otel-collector:
+    container_name: otelcollector
+    image: otel/opentelemetry-collector-contrib:0.21.0
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./tracing/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "55680:55680" # zpages extension
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.103
+
+  db1:
+    image: postgres:latest
+    container_name: db1
+    hostname: db1
+    environment:
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=dbpass
+      - POSTGRES_DB=corda
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.111
+
+  node1:
+    build: ./dockerfiles/node/
+    container_name: node1
+    hostname: node1
+    environment:
+      - CONTAINER_NAME=node1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://172.18.110.103:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=corda,host.hostname=node1
+    volumes:
+      # corda node
+      - ./bootstrap/node1/corda.jar:/app/corda.jar
+      # The node configuration
+      - ./bootstrap/node1/node.conf:/app/node.conf:ro
+      # The network parameters (https://docs.corda.net/network-map.html#network-parameters) all nodes share
+      - ./shared/network-parameters:/app/network-parameters:ro
+      # The additional node infos (https://docs.corda.net/network-map.html#the-additional-node-infos-directory)
+      - ./shared/infos:/app/additional-node-infos
+      # Custom logging CorDapp
+      - ./shared/cordapps/customlogging-yocordapp-0.1.jar:/app/cordapps/customlogging-yocordapp-0.1.jar:ro
+      - ./shared/cordapps/contracts-0.1.jar:/app/cordapps/contracts-0.1.jar:ro
+      - ./shared/cordapps/workflows-0.1.jar:/app/cordapps/workflows-0.1.jar:ro
+      # The business network participant configuration stating which operator is permitted
+      # - ./shared/membership-service-member.conf:/app/cordapps/config/membership-service.conf:ro
+      # The nodes certificate directory containing all three key stores
+      - ./bootstrap/node1/certificates:/app/certificates:ro
+      # JMX exporter config:
+      - ./dockerfiles/node/config.yaml:/app/config.yaml
+      # logs
+      - ./bootstrap/node1/logs:/app/logs
+      # Log42 config
+      - ./dockerfiles/node/logging.xml:/app/logging.xml
+      # additional drivers
+      - ./shared/drivers:/app/drivers
+    ports:
+      - "10001:10001"
+      - "10002:10002"
+      - "10003:10003"
+      - "10004:10004"
+      - "8080:8080"
+    depends_on:
+      - db1
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.110
+
+  node2:
+    build: ./dockerfiles/node
+    container_name: node2
+    hostname: node2
+    environment:
+      - CONTAINER_NAME=node2
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://172.18.110.103:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=corda,host.hostname=node2
+    volumes:
+      # corda node
+      - ./bootstrap/node2/corda.jar:/app/corda.jar
+      # The node configuration
+      - ./bootstrap/node2/node.conf:/app/node.conf:ro
+      # The network parameters (https://docs.corda.net/network-map.html#network-parameters) all nodes share
+      - ./shared/network-parameters:/app/network-parameters:ro
+      # The additional node infos (https://docs.corda.net/network-map.html#the-additional-node-infos-directory)
+      - ./shared/infos:/app/additional-node-infos
+      # Custom logging CorDapp
+      - ./shared/cordapps/customlogging-yocordapp-0.1.jar:/app/cordapps/customlogging-yocordapp-0.1.jar:ro
+      - ./shared/cordapps/contracts-0.1.jar:/app/cordapps/contracts-0.1.jar:ro
+      - ./shared/cordapps/workflows-0.1.jar:/app/cordapps/workflows-0.1.jar:ro
+      # The business network participant configuration stating which operator is permitted
+      # - ./shared/membership-service-member.conf:/app/cordapps/config/membership-service.conf:ro
+      # The nodes certificate directory containing all three key stores
+      - ./bootstrap/node2/certificates:/app/certificates:ro
+      # JMX exporter config:
+      - ./dockerfiles/node/config.yaml:/app/config.yaml
+      # logs
+      - ./bootstrap/node2/logs:/app/logs
+      # Log42 config
+      - ./dockerfiles/node/logging.xml:/app/logging.xml
+    ports:
+      - "20001:20001"
+      - "20002:20002"
+      - "20003:20003"
+      - "20004:20004"
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.120
+
+  notary:
+    build: ./dockerfiles/node
+    container_name: notary_node
+    hostname: notary_node
+    environment:
+      - CONTAINER_NAME=notary_node
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://172.18.110.103:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=corda,host.hostname=notary
+    volumes:
+      # corda node
+      - ./bootstrap/notary/corda.jar:/app/corda.jar
+      # The node configuration
+      - ./bootstrap/notary/node.conf:/app/node.conf:ro
+      # The network parameters (https://docs.corda.net/network-map.html#network-parameters) all nodes share
+      - ./shared/network-parameters:/app/network-parameters:ro
+      # The additional node infos (https://docs.corda.net/network-map.html#the-additional-node-infos-directory)
+      - ./shared/infos:/app/additional-node-infos
+      # The nodes certificate directory containing all three key stores
+      - ./bootstrap/notary/certificates:/app/certificates:ro
+      # JMX exporter config:
+      - ./dockerfiles/node/config.yaml:/app/config.yaml
+      # logs
+      - ./bootstrap/notary/logs:/app/logs
+      # Log42 config
+      - ./dockerfiles/node/logging.xml:/app/logging.xml
+    ports:
+      - "30001:30001"
+      - "30002:30002"
+      - "30003:30003"
+      - "30004:30004"
+    networks:
+      corda-net:
+        ipv4_address: 172.18.110.130
+
+networks:
+  corda-net:
+    name: corda-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.110.0/24
+
+volumes:
+  "splunk-var":
+  "splunk-etc":

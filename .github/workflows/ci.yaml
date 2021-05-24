@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_release:
+    name: build_release
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: version
+        run: echo "::set-output name=version::$(cat apps/Splunk_App_for_Corda/default/app.conf | grep version | head -1 | awk '{split($0,a," "); print a[3]}')"
+        id: version
+      - name: copy readme
+        run: cp README.md apps/Splunk_App_for_Corda/README.md
+      - name: package
+        run: cd apps && tar -cvzf splunk_app_for_corda.tgz Splunk_App_for_Corda
+      - name: app-inspect
+        uses: splunk/appinspect-api-action@v2
+        with:
+          filePath: ./apps/splunk_app_for_corda.tgz
+          splunkUser: ${{ secrets.SPLUNKBASE_USER }}
+          splunkPassword: ${{ secrets.SPLUNKBASE_PASSWORD }}
+          failOnError: true
+          failOnWarning: true
+          includedTags: cloud

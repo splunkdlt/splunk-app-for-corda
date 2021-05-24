@@ -1,0 +1,10 @@
+<nav search_view="search">
+  <view name="intro" default="true"/>
+  <view name="metrics"/>
+  <view name="firewall_logger"/>
+  <view name="flow_analytics"/>
+  <view name="database"/>
+  <view name="analytics_workspace" />
+  <view name="search" />
+  <view name="dashboards" />
+</nav>

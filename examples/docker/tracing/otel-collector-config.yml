@@ -1,0 +1,83 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+  prometheus_simple/node1:
+    endpoint: "node1:8080"
+    tls_enabled: false
+    collection_interval: 10s
+  prometheus_simple/node2:
+    endpoint: "node2:8080"
+    tls_enabled: false
+    collection_interval: 10s
+  prometheus_simple/notary:
+    endpoint: "notary:8080"
+    tls_enabled: false
+    collection_interval: 10s
+
+exporters:
+  splunk_hec/traces:
+    # Splunk HTTP Event Collector token.
+    token: "11111111-1111-1111-1111-1111111111113"
+    # URL to a Splunk instance to send data to.
+    endpoint: "https://splunk:8088/services/collector"
+    # Optional Splunk source: https://docs.splunk.com/Splexicon:Source
+    source: "corda:traces"
+    # Optional Splunk source type: https://docs.splunk.com/Splexicon:Sourcetype
+    sourcetype: "otlp"
+    # Splunk index, optional name of the Splunk index targeted.
+    index: "traces"
+    # Maximum HTTP connections to use simultaneously when sending data. Defaults to 100.
+    max_connections: 20
+    # Whether to disable gzip compression over HTTP. Defaults to false.
+    disable_compression: false
+    # HTTP timeout when sending data. Defaults to 10s.
+    timeout: 10s
+    # Whether to skip checking the certificate of the HEC endpoint when sending data over HTTPS. Defaults to false.
+    # For this demo, we use a self-signed certificate on the Splunk docker instance, so this flag is set to true.
+    insecure_skip_verify: true
+  splunk_hec/metrics:
+    # Splunk HTTP Event Collector token.
+    token: "11111111-1111-1111-1111-1111111111113"
+    # URL to a Splunk instance to send data to.
+    endpoint: "https://splunk:8088/services/collector"
+    # Optional Splunk source: https://docs.splunk.com/Splexicon:Source
+    source: "corda:metrics"
+    # Optional Splunk source type: https://docs.splunk.com/Splexicon:Sourcetype
+    sourcetype: "prometheus"
+    # Splunk index, optional name of the Splunk index targeted.
+    index: "metrics"
+    # Maximum HTTP connections to use simultaneously when sending data. Defaults to 100.
+    max_connections: 20
+    # Whether to disable gzip compression over HTTP. Defaults to false.
+    disable_compression: false
+    # HTTP timeout when sending data. Defaults to 10s.
+    timeout: 10s
+    # Whether to skip checking the certificate of the HEC endpoint when sending data over HTTPS. Defaults to false.
+    # For this demo, we use a self-signed certificate on the Splunk docker instance, so this flag is set to true.
+    insecure_skip_verify: true
+
+processors:
+  batch:
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
+service:
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [splunk_hec/traces]
+      processors: [batch]
+    metrics/alice:
+      receivers: [prometheus_simple/node1]
+      exporters: [splunk_hec/metrics]
+      processors: [batch]
+    metrics/bob:
+      receivers: [prometheus_simple/node2]
+      exporters: [splunk_hec/metrics]
+      processors: [batch]

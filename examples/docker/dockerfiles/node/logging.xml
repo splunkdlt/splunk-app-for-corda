@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="ConsoleJSONAppender" target="SYSTEM_OUT">
+          <JsonLayout complete="false" compact="true"/>
+        </Console>
+        <File name="FileJSONAppender" fileName="logs/node.json">
+          <JsonLayout complete="false" compact="true" properties="true" eventEol="true"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Logger name="net.corda" level="info" additivity="false">
+            <AppenderRef ref="FileJSONAppender"/>
+        </Logger>
+        <Logger name="com.r3.corda" level="info" additivity="false">
+            <AppenderRef ref="FileJSONAppender"/>
+        </Logger>
+        <Logger name="org.hibernate" level="info" additivity="false">
+            <AppenderRef ref="FileJSONAppender"/>
+        </Logger>
+        <Logger name="org.postgresql" level="info" additivity="false">
+            <AppenderRef ref="FileJSONAppender"/>
+        </Logger>
+        <Root level="error">
+            <AppenderRef ref="FileJSONAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

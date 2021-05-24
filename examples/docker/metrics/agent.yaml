@@ -1,0 +1,33 @@
+intervalSeconds: 10
+
+etcPath: /hostfs/etc
+procPath: /hostfs/proc
+runPath: /hostfs/run
+varPath: /hostfs/var
+sysPath: /hostfs/sys
+
+logging:
+  # Valid values are 'debug', 'info', 'warning', and 'error'
+  level: info
+
+writer:
+  traceExportFormat: sapm
+  signalFxEnabled: false
+  splunk:
+    enabled: true
+    url: ${SPLUNK_URL}
+    token: ${SPLUNK_TOKEN}
+    index: ${SPLUNK_INDEX}
+    source: ${SPLUNK_SOURCE}
+    skipTLSVerify: ${SPLUNK_SKIP_TLS_VERIFY}
+monitors:
+  - {"#from": "/etc/signalfx/monitors/*.yaml", flatten: true, optional: true}
+  - type: prometheus-exporter
+    host: prometheus
+    # Prometheus captures the counter metric on the go program we run independently.
+    # We choose to run a separate Prometheus container to gather the metrics data, and read that data with SignalFx.
+    # the match[] parameter is required. There can be multiple match[] parameters. Each match entry is a query against Prometheus.
+    metricPath: '/federate?match[]=%7Bjob%3D"node"%7D'
+    port: 9090
+    extraDimensions:
+      metric_source: prometheus

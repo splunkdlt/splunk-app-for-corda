@@ -1,0 +1,335 @@
+<form theme="dark" version="1.1">
+  <label>Flow Analysis</label>
+  <fieldset submitButton="false">
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>-4h@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="log_token">
+      <label>Select Log Level</label>
+      <choice value="INFO">INFO</choice>
+      <choice value="WARN">WARN</choice>
+      <choice value="ERROR">ERROR</choice>
+      <choice value="DEBUG">DEBUG</choice>
+      <default>INFO,WARN,ERROR,DEBUG</default>
+      <initialValue>INFO,WARN,ERROR,DEBUG</initialValue>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <valuePrefix>level=</valuePrefix>
+      <delimiter>  OR </delimiter>
+    </input>
+    <input type="text" token="tx_token" searchWhenChanged="true">
+      <label>Search for TXID</label>
+      <default>523A173FD59AA7E693EE02DAD79D55C4AA3F40A1F7AD9B697DDB210AE6D87F02</default>
+      <initialValue>523A173FD59AA7E693EE02DAD79D55C4AA3F40A1F7AD9B697DDB210AE6D87F02</initialValue>
+    </input>
+    <input type="text" token="flow_token">
+      <label>Filter on Flow ID</label>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <title>TX Duration for $tx_token$</title>
+        <search>
+          <query>index=corda $tx_token$
+| rex field=_raw "\[(?&lt;log_level&gt;\w+)\]\s+\d+:\d+:\d+\+\d+\s\[(?&lt;log_description&gt;[^\]]+)\]\s+(?&lt;log_call&gt;[^-]+)\s+-\s+(?&lt;log_msg&gt;[^{]+)"
+| rex field=_raw "SignedTransaction\(id=(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for transaction\s+(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for transaction ID\s+(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "Transaction\s+\[(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for Tx\s+\[(?&lt;tx_id&gt;\w{64})"
+| transaction tx_id
+| stats earliest(_time) as start_time latest(_time) as end_time latest(duration) as tx_duration latest(eventcount) as event_count values(host) as nodes values(tx_id) as tx_ids by tx_id
+| sort + start_time
+| eval tx_id=substr(tx_id,0,16)."..." | fields - tx_ids</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <chart>
+        <title>Corda Flow Status</title>
+        <search>
+          <query>| mstats avg(_value) as avg_value WHERE metric_name="corda_Flows*" AND index="metrics" span=10s BY metric_name
+| search metric_name="*Started" OR metric_name="*Error" OR metric_name="*InFlight" OR metric_name="*Finished"
+| timechart span=1m partial=f latest(avg_value) by metric_name</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <refresh>5m</refresh>
+          <refreshType>delay</refreshType>
+        </search>
+        <selection>
+          <set token="selection.earliest">$start$</set>
+          <set token="selection.latest">$end$</set>
+          <set token="start.count">$start.count$</set>
+          <set token="end.count">$end.count$</set>
+        </selection>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"Avg":"#1e93c6"}</option>
+        <option name="charting.fieldDashStyles">{"Avg":"solid"}</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">1</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="displayview">analytics_workspace</option>
+        <option name="height">246</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Flow Durations for $tx_token$</title>
+        <search>
+          <query>index=corda contextMap.tx_id=$tx_token$
+| rename contextMap.tx_id as tx_id
+| rename contextMap.flow-id as flow_id
+| rename contextMap.invocation_timestamp as invocation_timestamp
+| eval invocation_time=floor(strptime(invocation_timestamp,"%Y-%m-%dT%H:%M:%S.%3N%Z"))
+| eval duration = _time - invocation_time
+| transaction flow_id
+| stats earliest(_time) as start_time latest(_time) as end_time latest(duration) as flow_duration latest(eventcount) as event_count values(host) as nodes values(tx_id) as tx_ids by flow_id
+| sort + start_time</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="flow_duration">
+          <colorPalette type="minMidMax" maxColor="#AF575A" minColor="#3C444D"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="nodes">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>log_host</title>
+        <search>
+          <query>index=corda contextMap.tx_id=$tx_token$ contextMap.flow-id=$flow_token$
+| search $log_token$
+| stats count by host</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">142</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>log_level</title>
+        <search>
+          <query>index=corda $tx_token$ contextMap.flow-id=$flow_token$
+| rex field=_raw "\\[(?&lt;log_level&gt;[A-Z]+?)\s*\]\s+\S+\s\[(?&lt;log_description&gt;[^\]]+)\]\s+(?&lt;log_call&gt;[^-]+)\s+-\s+(?&lt;log_msg&gt;[^{]+)"
+| rex field=_raw "SignedTransaction\(id=(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for transaction\s+(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for transaction ID\s+(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "Transaction\s+\[(?&lt;tx_id&gt;\w{64})"
+| rex field=_raw "for Tx\s+\[(?&lt;tx_id&gt;\w{64})"
+
+| stats count by level</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">142</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>logger_name</title>
+        <search>
+          <query>index=corda contextMap.tx_id=$tx_token$ contextMap.flow-id=$flow_token$
+| search $log_token$
+| stats count by loggerName</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">142</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Txn Sequence Logs for $tx_token$</title>
+        <search>
+          <query>index=corda contextMap.tx_id=$tx_token$ contextMap.flow-id=$flow_token$
+| search $log_token$
+| table _time host contextMap.flow-id contextMap.origin level message tx_id type
+| sort + _time</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">25</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">none</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <format type="color" field="log_call">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="log_description">
+          <colorPalette type="map"></colorPalette>
+        </format>
+        <format type="color" field="container_name">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="flow_id">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="log_level">
+          <colorPalette type="map">{"INFO":#53A051,"WARN":#EC9960,"DEBUG":#708794,"ERROR":#DC4E41}</colorPalette>
+        </format>
+        <format type="color" field="tx_id">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="host">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
