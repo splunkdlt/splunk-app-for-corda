@@ -4,7 +4,7 @@
     <panel>
       <html>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/corda.png" width="50%"/>
+          <img src="/static/app/Splunk_App_for_Corda/corda.png" width="50%"/>
         </center>
       </html>
     </panel>
@@ -13,7 +13,7 @@
        <center>
           <br/>
           <p>
-            <h2>Welcome to Splunk Connect for Corda! This is an early preview of what's to come when you combine the power of Splunk with Corda! For now there are a few examples of monitoring and analyzing the infrastructure and critical components of <strong>R3 Corda</strong></h2>
+            <h2>Welcome to Splunk App for Corda! This is an early preview of what's to come when you combine the power of Splunk with Corda! For now there are a few examples of monitoring and analyzing the infrastructure and critical components of <strong>R3 Corda</strong></h2>
           </p>
           <p>
             <h2>Below you are some useful links and example dashboards to get started with.  On the Dashboards keep a look out for and click on the "i" symbols for additional information about each chart. Please send us your feedback to blockchain@splunk.com.</h2>
@@ -27,11 +27,11 @@
       <html>
         <center>
           <h1>
-            <a href="/app/splunk-connect-for-corda/metrics" target="_blank">Corda Metrics</a>
+            <a href="/app/Splunk_App_for_Corda/metrics" target="_blank">Corda Metrics</a>
           </h1>
         </center>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/metrics.png"/>
+          <img src="/static/app/Splunk_App_for_Corda/metrics.png"/>
         </center>
       </html>
     </panel>
@@ -39,11 +39,11 @@
       <html>
         <center>
           <h1>
-            <a href="/app/splunk-connect-for-corda/firewall_logger" target="_blank">Firewall and Logger Stats</a>
+            <a href="/app/Splunk_App_for_Corda/firewall_logger" target="_blank">Firewall and Logger Stats</a>
           </h1>
         </center>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/firewall_logger.png"/>
+          <img src="/static/app/Splunk_App_for_Corda/firewall_logger.png"/>
         </center>
       </html>
     </panel>
@@ -51,11 +51,11 @@
       <html>
         <center>
           <h1>
-            <a href="/app/splunk-connect-for-corda/flow_analytics" target="_blank">Flow Analysis</a>
+            <a href="/app/Splunk_App_for_Corda/flow_analytics" target="_blank">Flow Analysis</a>
           </h1>
         </center>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/flow_analytics.png"/>
+          <img src="/static/app/Splunk_App_for_Corda/flow_analytics.png"/>
         </center>
       </html>
     </panel>
@@ -65,11 +65,11 @@
       <html>
         <center>
           <h1>
-            <a href="/app/splunk-connect-for-corda/search?earliest=-60m%40m&amp;latest=now&amp;q=search%20index%3Dcorda" target="_blank">Event Search</a>
+            <a href="/app/Splunk_App_for_Corda/search?earliest=-60m%40m&amp;latest=now&amp;q=search%20index%3Dcorda" target="_blank">Event Search</a>
           </h1>
         </center>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/search.png"/>
+          <img src="/static/app/Splunk_App_for_Corda/search.png"/>
         </center>
       </html>
     </panel>
@@ -81,7 +81,7 @@
           </h1>
         </center>
         <center>
-          <img src="/static/app/splunk-connect-for-corda/analysis_workspace.png"/>
+          <img src="/static/app/Splunk_App_for_Corda/analysis_workspace.png"/>
         </center>
       </html>
     </panel>

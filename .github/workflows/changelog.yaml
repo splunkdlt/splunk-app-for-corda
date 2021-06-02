@@ -1,0 +1,34 @@
+name: pr_changelog
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pr_changelog:
+    name: pr_changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: get_previous_tag
+        id: previoustag
+        uses: WyriHaximus/github-action-get-previous-tag@8a0e045f02c0a3a04e1452df58b90fc7e555e950
+      - name: changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@e5306b306fa2e34f05258789e0e5c526c1bd4352
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+          base-ref: ${{ steps.previoustag.outputs.tag }}
+      - name: update_pr
+        uses: tzkhan/pr-update-action@bbd4c9395df8a9c4ef075b8b7fe29f2ca76cdca9
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          base-branch-regex: 'main'
+          head-branch-regex: '.*'
+          body-template: ${{ steps.changelog.outputs.changelog }}
+          body-update-action: 'replace'
+          body-uppercase-base-match: false
