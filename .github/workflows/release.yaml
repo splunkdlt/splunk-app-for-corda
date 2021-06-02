@@ -32,7 +32,6 @@ jobs:
           short_tags: false
           # If this is set to true, *every* commit will be treated as a new version.
           bump_each_commit: false
-          branch: "main"
       - name: get_previous_tag
         id: previoustag
         uses: WyriHaximus/github-action-get-previous-tag@8a0e045f02c0a3a04e1452df58b90fc7e555e950
