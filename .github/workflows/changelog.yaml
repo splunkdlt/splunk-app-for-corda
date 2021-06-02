@@ -24,7 +24,7 @@ jobs:
           myToken: ${{ secrets.GITHUB_TOKEN }}
           base-ref: ${{ steps.previoustag.outputs.tag }}
       - name: update_pr
-        uses: tzkhan/pr-update-action@vbbd4c9395df8a9c4ef075b8b7fe29f2ca76cdca9
+        uses: tzkhan/pr-update-action@bbd4c9395df8a9c4ef075b8b7fe29f2ca76cdca9
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           base-branch-regex: 'master'
