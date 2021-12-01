@@ -63,10 +63,9 @@ You'll need to add 3 indexes to your Splunk installation.
 - name: `traces`, type: `event`
 - name: `metrics`, type: `metric`
 
-Take note that you'll need to install our Splunk Apps and Add-ons to make sense of all of the new data being sent to your instance.
-- [Splunk App for Infrastructure](https://splunkbase.splunk.com/app/3975/)
-- [Splunk Add-on for Infrastructure](https://splunkbase.splunk.com/app/4217/)
-- [Splunk App for Corda](https://github.com/splunkdlt/splunk-app-for-corda/releases)
+You will want to install our Splunk Apps and Add-ons to make sense of all of the new data being sent to your instance.
+You can read more about infrastructure monitoring using our Infrastructure Monitoring Tooling [here](https://www.splunk.com/en_us/devops/infrastructure-monitoring-and-troubleshooting.html) 
+and IT Essentials [here](https://www.splunk.com/en_us/software/it-essentials.html).
 
 ## Architecture / Getting Data In
 
