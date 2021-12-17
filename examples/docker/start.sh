@@ -18,6 +18,7 @@ rm -rf bootstrap/.cache
 rm -rf bootstrap/node1
 rm -rf bootstrap/node2
 rm -rf bootstrap/notary
+mkdir -p bootstrap/node1 bootstrap/node2 bootstrap/notary
 
 docker-compose up -d db1
 
