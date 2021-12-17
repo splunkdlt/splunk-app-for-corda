@@ -44,6 +44,8 @@
 | rex field=_raw "for transaction ID\s+(?&lt;tx_id&gt;\w{64})"
 | rex field=_raw "Transaction\s+\[(?&lt;tx_id&gt;\w{64})"
 | rex field=_raw "for Tx\s+\[(?&lt;tx_id&gt;\w{64})"
+| spath contextMap
+| rename contextMap.tx_id as tx_id
 | transaction tx_id
 | stats earliest(_time) as start_time latest(_time) as end_time latest(duration) as tx_duration latest(eventcount) as event_count values(host) as nodes values(tx_id) as tx_ids by tx_id
 | sort + start_time

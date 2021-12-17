@@ -17,10 +17,16 @@ receivers:
     collection_interval: 10s
   filelog/node1:
     include: [ /var/bootstrap/node1/logs/*.json ]
+    attributes:
+      "host.name": node1
   filelog/node2:
     include: [ /var/bootstrap/node2/logs/*.json ]
+    attributes:
+      "host.name": node2
   filelog/notary:
     include: [ /var/bootstrap/notary/logs/*.json ]
+    attributes:
+      "host.name": notary
 
 exporters:
   splunk_hec/traces:
