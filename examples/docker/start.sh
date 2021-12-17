@@ -21,11 +21,15 @@ rm -rf bootstrap/notary
 
 docker-compose up -d db1
 
+echo "Install node.conf files"
+cp shared/alice_node.conf bootstrap/node1_node.conf
+cp shared/bob_node.conf bootstrap/node2_node.conf
+cp shared/notary_node.conf bootstrap/notary_node.conf
+
 echo "downloading postgresql drivers..."
 mkdir -p shared/drivers
 curl https://jdbc.postgresql.org/download/postgresql-42.2.20.jar -o shared/drivers/postgresql-42.2.20.jar -s
 
-mkdir -p bootstrap/node1
 cp -r shared/drivers bootstrap/node1/drivers
 
 echo "building bootstrapper docker image..."

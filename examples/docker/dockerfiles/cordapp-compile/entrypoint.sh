@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-curl -LJO https://github.com/corda/samples-kotlin/tarball/master
+curl -LJO https://github.com/corda/samples-kotlin/tarball/cafc5354ce51959fe92986992b8ebf758eafff7f
 
 tar -xzf corda-samples-kotlin-*.tar.gz
 

@@ -38,10 +38,11 @@ services:
 
   otel-collector:
     container_name: otelcollector
-    image: otel/opentelemetry-collector-contrib:0.21.0
+    image: otel/opentelemetry-collector-contrib:0.40.0
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - ./tracing/otel-collector-config.yml:/etc/otel-collector-config.yml
+      - ./bootstrap:/var/bootstrap/
     ports:
       - "1888:1888"   # pprof extension
       - "8888:8888"   # Prometheus metrics exposed by the collector
@@ -93,7 +94,7 @@ services:
       # The business network participant configuration stating which operator is permitted
       # - ./shared/membership-service-member.conf:/app/cordapps/config/membership-service.conf:ro
       # The nodes certificate directory containing all three key stores
-      - ./bootstrap/node1/certificates:/app/certificates:ro
+      - ./bootstrap/node1/certificates:/app/certificates
       # JMX exporter config:
       - ./dockerfiles/node/config.yaml:/app/config.yaml
       # logs
@@ -138,7 +139,7 @@ services:
       # The business network participant configuration stating which operator is permitted
       # - ./shared/membership-service-member.conf:/app/cordapps/config/membership-service.conf:ro
       # The nodes certificate directory containing all three key stores
-      - ./bootstrap/node2/certificates:/app/certificates:ro
+      - ./bootstrap/node2/certificates:/app/certificates
       # JMX exporter config:
       - ./dockerfiles/node/config.yaml:/app/config.yaml
       # logs
@@ -172,7 +173,7 @@ services:
       # The additional node infos (https://docs.corda.net/network-map.html#the-additional-node-infos-directory)
       - ./shared/infos:/app/additional-node-infos
       # The nodes certificate directory containing all three key stores
-      - ./bootstrap/notary/certificates:/app/certificates:ro
+      - ./bootstrap/notary/certificates:/app/certificates
       # JMX exporter config:
       - ./dockerfiles/node/config.yaml:/app/config.yaml
       # logs
