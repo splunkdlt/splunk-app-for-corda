@@ -1,6 +1,8 @@
 # Splunk App for Corda
+## Warning 
+Splunk App for Corda is no longer supported. Please reach out to blockchain@splunk.com if you have any issues. 
 
-
+## Splunk App for Corda
 Splunk App for Corda gives you insight into your blockchain infrastructures built on [Corda](https://www.corda.net/). With the new Splunk App for Corda, you will get the building blocks to obtain visibility and monitoring of Corda node application logs, metrics, and traces, in addition to transaction data from the distributed ledger itself!
 
 Splunk App for Corda makes it easy for you to fully monitor your Corda Enterprise and OS environment. The example in [examples/docker](https://github.com/splunkdlt/splunk-app-for-corda/blob/main/examples/docker) illustrates how to implement infrastructure metric monitoring, as well as application trace, metric and log monitoring.
